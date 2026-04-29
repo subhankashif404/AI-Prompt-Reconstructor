@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Prompt Reconstructor</title>
+    <meta name="description" content="Extract and reconstruct prompts from YouTube videos">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1><i class="fab fa-youtube"></i> YouTube Prompt Reconstructor</h1>
+            <p class="subtitle">Extract AI prompts from any YouTube video</p>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Input Section -->
+            <section class="input-section">
+                <div class="input-group">
+                    <label for="youtubeUrl">YouTube Video URL</label>
+                    <div class="url-input-wrapper">
+                        <input type="text" id="youtubeUrl" placeholder="https://www.youtube.com/watch?v=...">
+                        <button id="analyzeBtn" class="btn-primary">
+                            <i class="fas fa-search"></i> Analyze
+                        </button>
+                    </div>
+                </div>
+
+                <!-- API Key Section -->
+                <div class="api-section">
+                    <div class="api-input-group">
+                        <label for="geminiApiKey">Gemini API Key (Optional)</label>
+                        <div class="api-wrapper">
+                            <input type="password" id="geminiApiKey" placeholder="Enter API key for better results...">
+                            <button id="verifyBtn" class="btn-verify">
+                                <i class="fas fa-check"></i> Verify
+                            </button>
+                        </div>
+                        <div id="apiStatus" class="api-status"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Video Preview Section -->
+            <section id="videoSection" class="video-section" style="display: none;">
+                <div class="video-preview">
+                    <img id="videoThumbnail" src="" alt="Video Thumbnail">
+                    <div class="video-info">
+                        <h3 id="videoTitle">Video Title</h3>
+                        <p id="videoId" class="video-id"></p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Loading Section -->
+            <section id="loadingSection" class="loading-section" style="display: none;">
+                <div class="loader">
+                    <div class="spinner"></div>
+                    <p>Analyzing video transcript...</p>
+                </div>
+            </section>
+
+            <!-- Error Section -->
+            <section id="errorSection" class="error-section" style="display: none;">
+                <div class="error-box">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <p id="errorMessage">Error message</p>
+                </div>
+            </section>
+
+            <!-- Results Section -->
+            <section id="resultsSection" class="results-section" style="display: none;">
+                <!-- Stats -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fas fa-file-alt"></i></div>
+                        <div class="stat-info">
+                            <span class="stat-value" id="transcriptLength">0</span>
+                            <span class="stat-label">Characters</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fas fa-list"></i></div>
+                        <div class="stat-info">
+                            <span class="stat-value" id="segmentCount">0</span>
+                            <span class="stat-label">Segments</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fas fa-tag"></i></div>
+                        <div class="stat-info">
+                            <span class="stat-value" id="contentType">-</span>
+                            <span class="stat-label">Type</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fas fa-brain"></i></div>
+                        <div class="stat-info">
+                            <span class="stat-value" id="complexity">-</span>
+                            <span class="stat-label">Complexity</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Topics -->
+                <div id="topicsSection" class="topics-section" style="display: none;">
+                    <h3>Topics</h3>
+                    <div id="topicsList" class="topics-list"></div>
+                </div>
+
+                <!-- SEO & Metadata Section -->
+                <div id="seoSection" class="seo-section" style="display: none;">
+                    <h3><i class="fas fa-search"></i> SEO & Metadata</h3>
+                    
+                    <!-- SEO Score -->
+                    <div class="seo-score-card">
+                        <div class="seo-header">
+                            <span>SEO Score</span>
+                            <span class="seo-score-value" id="seoScore">0</span>
+                        </div>
+                        <div class="seo-bar">
+                            <div class="seo-bar-fill" id="seoBarFill"></div>
+                        </div>
+                    </div>
+
+                    <!-- Title Suggestions -->
+                    <div class="seo-subsection">
+                        <h4><i class="fas fa-heading"></i> Title Suggestions</h4>
+                        <div id="titleSuggestions" class="title-suggestions"></div>
+                    </div>
+
+                    <!-- Description -->
+                    <div class="seo-subsection">
+                        <h4><i class="fas fa-align-left"></i> SEO Description</h4>
+                        <div class="description-box">
+                            <pre id="seoDescription"></pre>
+                            <button class="btn-copy" onclick="copyText('seoDescription')">
+                                <i class="fas fa-copy"></i> Copy
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Tags -->
+                    <div class="seo-subsection">
+                        <h4><i class="fas fa-tags"></i> Recommended Tags</h4>
+                        <div id="tagsContainer" class="tags-container"></div>
+                        <button class="btn-copy" onclick="copyTags()" style="margin-top: 15px;">
+                            <i class="fas fa-copy"></i> Copy All Tags
+                        </button>
+                    </div>
+
+                    <!-- SEO Tips -->
+                    <div class="seo-subsection">
+                        <h4><i class="fas fa-lightbulb"></i> SEO Tips</h4>
+                        <ul id="seoTips" class="tips-list"></ul>
+                    </div>
+                </div>
+
+                <!-- Reconstructed Prompts -->
+                <div class="prompts-section">
+                    <h3><i class="fas fa-magic"></i> Reconstructed Prompts</h3>
+                    <div id="reconstructedPrompts" class="prompts-list"></div>
+                </div>
+
+                <!-- Enhanced Prompts -->
+                <div class="prompts-section">
+                    <h3><i class="fas fa-rocket"></i> Enhanced Prompts</h3>
+                    <div id="enhancedPrompts" class="prompts-list"></div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>Developed with <i class="fas fa-heart"></i> by Subhan Kashif</p>
+        </footer>
+    </div>
+
+    <!-- Scripts -->
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
